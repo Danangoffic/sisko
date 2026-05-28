@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import * as InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
+import * as MidtransController from '@/actions/App/Http/Controllers/MidtransController';
 import { dashboard } from '@/routes';
 
 interface StudentItem { id: number; name: string; nisn: string }
@@ -29,6 +30,7 @@ interface Props {
     invoices: { data: Invoice[]; current_page: number; last_page: number };
     students: StudentItem[];
     paymentTypes: PaymentTypeItem[];
+    midtransClientKey: string;
 }
 
 const statusColor: Record<string, string> = {
@@ -37,11 +39,25 @@ const statusColor: Record<string, string> = {
     overdue: 'bg-red-100 text-red-700',
 };
 
-export default function InvoicesIndex({ invoices, students, paymentTypes }: Props) {
+export default function InvoicesIndex({ invoices, students, paymentTypes, midtransClientKey }: Props) {
     const [payingId, setPayingId] = useState<number | null>(null);
     const createForm = useForm({ student_id: '', payment_type_id: '', amount: '', due_date: '', month: '' });
     const payForm = useForm({ amount: '', payment_method: 'cash', transaction_id: '' });
     const deleteForm = useForm({});
+
+    async function handlePayOnline(invoiceId: number) {
+        const res = await fetch(MidtransController.createSnapToken(invoiceId).url, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '', 'Accept': 'application/json' },
+        });
+        const { snap_token } = await res.json();
+        // @ts-expect-error - Midtrans snap.js loaded via script tag
+        window.snap.pay(snap_token, {
+            onSuccess: () => window.location.reload(),
+            onPending: () => window.location.reload(),
+            onError: () => alert('Pembayaran gagal.'),
+        });
+    }
 
     function handleCreate(e: React.FormEvent) {
         e.preventDefault();
@@ -66,7 +82,14 @@ export default function InvoicesIndex({ invoices, students, paymentTypes }: Prop
 
     return (
         <>
-            <Head title="Invoice" />
+            <Head title="Invoice">
+                {midtransClientKey && (
+                    <script
+                        src={`https://app.${midtransClientKey ? 'sandbox.' : ''}midtrans.com/snap/snap.js`}
+                        data-client-key={midtransClientKey}
+                    />
+                )}
+            </Head>
             <div className="flex h-full flex-1 flex-col gap-6 p-6 md:flex-row">
                 {/* Form Buat Invoice */}
                 <div className="w-full shrink-0 md:w-80">
@@ -152,7 +175,12 @@ export default function InvoicesIndex({ invoices, students, paymentTypes }: Prop
                                             </td>
                                             <td className="flex gap-1 py-3">
                                                 {inv.status !== 'paid' && (
-                                                    <Button size="sm" variant="outline" onClick={() => { setPayingId(inv.id); payForm.setData('amount', String(inv.amount)); }}>Bayar</Button>
+                                                    <>
+                                                        <Button size="sm" variant="outline" onClick={() => { setPayingId(inv.id); payForm.setData('amount', String(inv.amount)); }}>Bayar</Button>
+                                                        {midtransClientKey && (
+                                                            <Button size="sm" variant="default" onClick={() => handlePayOnline(inv.id)}>Bayar Online</Button>
+                                                        )}
+                                                    </>
                                                 )}
                                                 <Button variant="ghost" size="icon" onClick={() => handleDelete(inv.id)} disabled={deleteForm.processing}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                             </td>
