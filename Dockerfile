@@ -6,6 +6,7 @@ RUN npm ci
 COPY vite.config.ts tsconfig.json components.json eslint.config.js ./
 COPY resources/ resources/
 COPY public/ public/
+ENV CI=true
 RUN npm run build
 
 # Stage 2: Install PHP dependencies

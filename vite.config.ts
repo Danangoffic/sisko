@@ -24,8 +24,6 @@ export default defineConfig({
             },
         }),
         tailwindcss(),
-        wayfinder({
-            formVariants: true,
-        }),
+        ...(!process.env.CI ? [wayfinder({ formVariants: true })] : []),
     ],
 });
