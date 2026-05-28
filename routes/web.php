@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassPromotionController;
 use App\Http\Controllers\GradeController;
@@ -20,12 +21,17 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
 
+    Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
+
     Route::get('/kelas', [SchoolClassController::class, 'index'])->name('class.index');
     Route::post('/kelas', [SchoolClassController::class, 'store'])->name('class.store');
     Route::delete('/kelas/{school_class}', [SchoolClassController::class, 'destroy'])->name('class.destroy');
 
     Route::middleware('role:admin')->group(function () {
         Route::inertia('/users', 'users/index')->name('users.index');
+        Route::post('announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+        Route::put('announcements/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');
+        Route::delete('announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
         Route::resource('teachers', TeacherController::class)->except(['create', 'edit', 'show']);
         Route::resource('students', StudentController::class)->except(['create', 'edit', 'show']);
         Route::resource('academic-years', AcademicYearController::class)->except(['create', 'edit', 'show']);
