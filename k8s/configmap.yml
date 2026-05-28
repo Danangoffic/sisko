@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sisko-config
+  namespace: sisko
+data:
+  APP_NAME: "Sisko"
+  APP_ENV: "production"
+  APP_DEBUG: "false"
+  APP_URL: "https://sisko.example.com"
+  DB_CONNECTION: "mysql"
+  DB_HOST: "mysql"
+  DB_PORT: "3306"
+  DB_DATABASE: "sisko"
+  CACHE_STORE: "redis"
+  SESSION_DRIVER: "redis"
+  QUEUE_CONNECTION: "redis"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  LOG_CHANNEL: "stderr"
+  MAIL_MAILER: "log"

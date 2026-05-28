@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sisko-app
+  namespace: sisko
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sisko-app
+  template:
+    metadata:
+      labels:
+        app: sisko-app
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/danangoffic/sisko:latest
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: sisko-config
+            - secretRef:
+                name: sisko-secret
+          readinessProbe:
+            httpGet:
+              path: /up
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /up
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      initContainers:
+        - name: migrate
+          image: ghcr.io/danangoffic/sisko:latest
+          command: ["php", "artisan", "migrate", "--force"]
+          envFrom:
+            - configMapRef:
+                name: sisko-config
+            - secretRef:
+                name: sisko-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sisko-app
+  namespace: sisko
+spec:
+  selector:
+    app: sisko-app
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sisko-app-hpa
+  namespace: sisko
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sisko-app
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
