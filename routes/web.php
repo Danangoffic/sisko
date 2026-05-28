@@ -3,6 +3,8 @@
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\BookController;
+use App\Http\Controllers\BookLoanController;
 use App\Http\Controllers\ClassPromotionController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\InvoiceController;
@@ -51,6 +53,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('invoices/{invoice}/pay', [InvoiceController::class, 'pay'])->name('invoices.pay');
         Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
         Route::post('midtrans/snap-token/{invoice}', [MidtransController::class, 'createSnapToken'])->name('midtrans.snap-token');
+        Route::resource('books', BookController::class)->except(['create', 'edit', 'show']);
+        Route::get('book-loans', [BookLoanController::class, 'index'])->name('book-loans.index');
+        Route::post('book-loans', [BookLoanController::class, 'store'])->name('book-loans.store');
+        Route::post('book-loans/{book_loan}/return', [BookLoanController::class, 'returnBook'])->name('book-loans.return');
+        Route::delete('book-loans/{book_loan}', [BookLoanController::class, 'destroy'])->name('book-loans.destroy');
     });
 
     Route::middleware('role:admin,guru')->group(function () {
