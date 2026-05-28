@@ -6,14 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class SchoolClass extends Model
+class Subject extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'homeroom_teacher'];
+    protected $fillable = ['name', 'code', 'description'];
 
-    public function students(): HasMany
+    public function schedules(): HasMany
     {
-        return $this->hasMany(Student::class);
+        return $this->hasMany(Schedule::class);
     }
 }
