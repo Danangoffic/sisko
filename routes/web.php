@@ -4,6 +4,8 @@ use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassPromotionController;
 use App\Http\Controllers\GradeController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PaymentTypeController;
 use App\Http\Controllers\ReportCardController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SchoolClassController;
@@ -36,6 +38,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('promotions/{promotion}', [ClassPromotionController::class, 'destroy'])->name('promotions.destroy');
         Route::resource('subjects', SubjectController::class)->except(['create', 'edit', 'show']);
         Route::resource('schedules', ScheduleController::class)->except(['create', 'edit', 'show']);
+        Route::resource('payment-types', PaymentTypeController::class)->except(['create', 'edit', 'show']);
+        Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+        Route::post('invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+        Route::post('invoices/{invoice}/pay', [InvoiceController::class, 'pay'])->name('invoices.pay');
+        Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
     });
 
     Route::middleware('role:admin,guru')->group(function () {
