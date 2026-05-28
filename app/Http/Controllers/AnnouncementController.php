@@ -15,12 +15,17 @@ class AnnouncementController extends Controller
     {
         $user = $request->user();
 
-        $announcements = Announcement::with('author:id,name')
-            ->where(function ($q) use ($user): void {
+        $query = Announcement::with('author:id,name')
+            ->whereNotNull('published_at');
+
+        if ($user->role->value !== 'admin') {
+            $query->where(function ($q) use ($user): void {
                 $q->where('target_role', 'all')
                     ->orWhere('target_role', $user->role->value);
-            })
-            ->whereNotNull('published_at')
+            });
+        }
+
+        $announcements = $query
             ->orderByDesc('is_pinned')
             ->latest('published_at')
             ->paginate(15);
