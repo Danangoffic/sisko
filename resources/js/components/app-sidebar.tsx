@@ -1,5 +1,13 @@
+import { usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, School } from 'lucide-react';
+import {
+    BookOpen,
+    FolderGit2,
+    LayoutGrid,
+    School,
+    UserCog,
+    Users,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -15,25 +23,13 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import * as SchoolClassController from '@/actions/App/Http/Controllers/SchoolClassController';
-import type { NavItem } from '@/types';
-
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Manajemen Kelas',
-        href: SchoolClassController.index().url,
-        icon: School,
-    },
-];
+import * as TeacherController from '@/actions/App/Http/Controllers/TeacherController';
+import type { Auth, NavItem } from '@/types';
 
 const footerNavItems: NavItem[] = [
     {
         title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
+        href: 'https://github.com/Danangoffic/sisko',
         icon: FolderGit2,
     },
     {
@@ -44,6 +40,40 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const role = auth.user.role;
+
+    const mainNavItems: NavItem[] = [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutGrid,
+        },
+        ...(role === 'admin' || role === 'guru'
+            ? [
+                  {
+                      title: 'Manajemen Kelas',
+                      href: SchoolClassController.index().url,
+                      icon: School,
+                  },
+              ]
+            : []),
+        ...(role === 'admin'
+            ? [
+                  {
+                      title: 'Manajemen Guru',
+                      href: TeacherController.index().url,
+                      icon: UserCog,
+                  },
+                  {
+                      title: 'Manajemen Pengguna',
+                      href: '/users',
+                      icon: Users,
+                  },
+              ]
+            : []),
+    ];
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
