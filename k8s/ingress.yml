@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sisko-ingress
+  namespace: sisko
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "64m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: sisko.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sisko-app
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - sisko.example.com
+      secretName: sisko-tls
