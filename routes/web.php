@@ -5,6 +5,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassPromotionController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\PaymentTypeController;
 use App\Http\Controllers\ReportCardController;
 use App\Http\Controllers\ScheduleController;
@@ -43,6 +44,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('invoices', [InvoiceController::class, 'store'])->name('invoices.store');
         Route::post('invoices/{invoice}/pay', [InvoiceController::class, 'pay'])->name('invoices.pay');
         Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
+        Route::post('midtrans/snap-token/{invoice}', [MidtransController::class, 'createSnapToken'])->name('midtrans.snap-token');
     });
 
     Route::middleware('role:admin,guru')->group(function () {
@@ -61,3 +63,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
+
+Route::post('midtrans/notification', [MidtransController::class, 'notification'])->name('midtrans.notification');

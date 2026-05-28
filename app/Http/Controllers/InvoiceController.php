@@ -24,6 +24,7 @@ class InvoiceController extends Controller
             'invoices' => $invoices,
             'students' => Student::orderBy('name')->get(['id', 'name', 'nisn']),
             'paymentTypes' => PaymentType::orderBy('name')->get(['id', 'name', 'amount']),
+            'midtransClientKey' => config('midtrans.client_key'),
         ]);
     }
 
