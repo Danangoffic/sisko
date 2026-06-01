@@ -120,6 +120,38 @@ class GradeTest extends TestCase
             ->assertSessionHasErrors(['teacher_id']);
     }
 
+    public function test_guru_without_teacher_profile_is_denied_grade_access_and_mutation(): void
+    {
+        $guruUser = User::factory()->guru()->create();
+        $grade = Grade::factory()->create();
+        $student = Student::factory()->create();
+
+        $this->actingAs($guruUser)->get('/grades')->assertStatus(403);
+
+        $this->actingAs($guruUser)
+            ->post('/grades', array_merge($this->base, [
+                'records' => [[
+                    'student_id' => $student->id,
+                    'score' => 80,
+                    'letter_grade' => '',
+                    'description' => '',
+                ]],
+            ]))
+            ->assertStatus(403);
+
+        $this->actingAs($guruUser)
+            ->put("/grades/{$grade->id}", [
+                'score' => 90,
+                'letter_grade' => 'A',
+                'description' => 'Updated',
+            ])
+            ->assertStatus(403);
+
+        $this->actingAs($guruUser)
+            ->delete("/grades/{$grade->id}")
+            ->assertStatus(403);
+    }
+
     public function test_guru_can_input_grades_as_themselves(): void
     {
         $guruUser = User::factory()->guru()->create();
@@ -172,6 +204,26 @@ class GradeTest extends TestCase
             ->assertRedirect();
 
         $this->assertDatabaseHas('grades', ['id' => $grade->id, 'score' => 90, 'letter_grade' => 'A']);
+    }
+
+    public function test_update_preserves_letter_grade_when_score_is_not_provided(): void
+    {
+        $academicYear = AcademicYear::factory()->create();
+        $semester = Semester::factory()->create(['academic_year_id' => $academicYear->id]);
+        GradeConfig::factory()->create(['academic_year_id' => $academicYear->id, 'scale_max' => 100]);
+
+        $grade = Grade::factory()->create(['semester_id' => $semester->id, 'score' => 70, 'letter_grade' => 'B']);
+
+        $this->actingAs($this->admin)
+            ->put("/grades/{$grade->id}", ['description' => 'Updated note'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('grades', [
+            'id' => $grade->id,
+            'score' => 70,
+            'letter_grade' => 'B',
+            'description' => 'Updated note',
+        ]);
     }
 
     public function test_guru_cannot_update_other_teachers_grade(): void

@@ -8,6 +8,7 @@ use App\Models\SchoolClass;
 use App\Models\Semester;
 use App\Models\Subject;
 use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,7 @@ class GradeController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
-        $teacher = $user->isGuru() ? $user->teacher : null;
+        $teacher = $this->teacherForUser($user);
 
         $gradesQuery = Grade::with(['student', 'subject', 'semester.academicYear', 'teacher.user'])->latest();
 
@@ -56,7 +57,7 @@ class GradeController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        $teacher = $user->isGuru() ? $user->teacher : null;
+        $teacher = $this->teacherForUser($user);
 
         $validated = $request->validate([
             'subject_id' => ['required', 'exists:subjects,id'],
@@ -122,7 +123,7 @@ class GradeController extends Controller
     public function update(Request $request, Grade $grade): RedirectResponse
     {
         $user = $request->user();
-        $teacher = $user->isGuru() ? $user->teacher : null;
+        $teacher = $this->teacherForUser($user);
 
         // Guru hanya boleh edit nilai yang dia input
         if ($teacher && $grade->teacher_id !== $teacher->id) {
@@ -144,13 +145,17 @@ class GradeController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
-        $validated['letter_grade'] = $this->resolveLetterGrade(
-            isset($validated['score']) && $validated['score'] !== null ? (float) $validated['score'] : null,
-            $validated['letter_grade'] ?? null,
-            $gradeConfig
-        );
+        $updates = $validated;
 
-        $grade->update($validated);
+        if (array_key_exists('score', $validated) || array_key_exists('letter_grade', $validated)) {
+            if (isset($validated['score']) && $validated['score'] !== null && $gradeConfig) {
+                $updates['letter_grade'] = $gradeConfig->letterFor((float) $validated['score']);
+            } elseif (array_key_exists('letter_grade', $validated)) {
+                $updates['letter_grade'] = $validated['letter_grade'];
+            }
+        }
+
+        $grade->update($updates);
 
         return back()->with('success', 'Nilai berhasil diperbarui.');
     }
@@ -158,7 +163,7 @@ class GradeController extends Controller
     public function destroy(Grade $grade): RedirectResponse
     {
         $user = request()->user();
-        $teacher = $user->isGuru() ? $user->teacher : null;
+        $teacher = $this->teacherForUser($user);
 
         if ($teacher && $grade->teacher_id !== $teacher->id) {
             abort(403);
@@ -176,5 +181,16 @@ class GradeController extends Controller
         }
 
         return $letterGrade;
+    }
+
+    private function teacherForUser(User $user): ?Teacher
+    {
+        if (! $user->isGuru()) {
+            return null;
+        }
+
+        abort_if($user->teacher === null, 403);
+
+        return $user->teacher;
     }
 }
