@@ -10,6 +10,8 @@ use App\Models\Student;
 use App\Models\User;
 use App\Notifications\InvoiceDueReminder;
 use App\Role;
+use Illuminate\Console\Scheduling\CallbackEvent;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
@@ -111,6 +113,33 @@ class InvoiceAutomationTest extends TestCase
         (new GenerateMonthlyInvoices(Carbon::now()))->handle();
 
         $this->assertDatabaseCount('invoices', 0);
+    }
+
+    public function test_monthly_invoice_scheduler_registers_the_job_instance(): void
+    {
+        $schedule = app(Schedule::class);
+
+        $event = null;
+
+        foreach ($schedule->events() as $scheduledEvent) {
+            if ($scheduledEvent instanceof CallbackEvent && $scheduledEvent->description === 'generate-monthly-invoices') {
+                $event = $scheduledEvent;
+
+                break;
+            }
+        }
+
+        $this->assertNotNull($event);
+
+        $callbackProperty = new \ReflectionProperty($event, 'callback');
+        $callbackProperty->setAccessible(true);
+
+        $callback = $callbackProperty->getValue($event);
+        $callbackReflection = new \ReflectionFunction($callback);
+        $staticVariables = $callbackReflection->getStaticVariables();
+
+        $this->assertArrayHasKey('job', $staticVariables);
+        $this->assertInstanceOf(GenerateMonthlyInvoices::class, $staticVariables['job']);
     }
 
     public function test_reminder_notification_sent_for_newly_overdue_invoices(): void
