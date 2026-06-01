@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +20,7 @@ class AttendanceController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
-        $teacher = $user->isGuru() ? $user->teacher : null;
+        $teacher = $user->isGuru() ? $this->teacherForUser($user) : null;
 
         $classes = SchoolClass::orderBy('name')->get(['id', 'name']);
 
@@ -57,7 +59,7 @@ class AttendanceController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        $teacher = $user->isGuru() ? $user->teacher : null;
+        $teacher = $user->isGuru() ? $this->teacherForUser($user) : null;
 
         $validated = $request->validate([
             'school_class_id' => ['required', 'exists:school_classes,id'],
@@ -129,5 +131,16 @@ class AttendanceController extends Controller
         $attendance->delete();
 
         return back()->with('success', 'Data absensi berhasil dihapus.');
+    }
+
+    private function teacherForUser(User $user): ?Teacher
+    {
+        if (! $user->isGuru()) {
+            return null;
+        }
+
+        abort_if($user->teacher === null, 403);
+
+        return $user->teacher;
     }
 }

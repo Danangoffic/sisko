@@ -6,6 +6,7 @@ use App\Models\Grade;
 use App\Models\GradeConfig;
 use App\Models\SchoolClass;
 use App\Models\Semester;
+use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\User;
@@ -76,6 +77,37 @@ class GradeController extends Controller
             throw ValidationException::withMessages([
                 'teacher_id' => 'Anda hanya dapat menginput nilai sebagai guru yang bersangkutan.',
             ]);
+        }
+
+        // Validasi subject_id dan siswa harus sesuai dengan jadwal guru
+        if ($teacher) {
+            $semesterIds = [$validated['semester_id']];
+            $schedules = $teacher->schedules()
+                ->where('subject_id', $validated['subject_id'])
+                ->whereHas('academicYear.semesters', fn ($q) => $q->whereIn('id', $semesterIds))
+                ->get();
+
+            if ($schedules->isEmpty()) {
+                throw ValidationException::withMessages([
+                    'subject_id' => 'Anda tidak mengampu mata pelajaran ini pada semester yang dipilih.',
+                ]);
+            }
+
+            $allowedClassIds = $schedules->pluck('school_class_id');
+            $badStudentIds = [];
+
+            foreach ($validated['records'] as $record) {
+                $studentSchoolClassId = Student::where('id', $record['student_id'])->value('school_class_id');
+                if ($studentSchoolClassId && ! $allowedClassIds->contains($studentSchoolClassId)) {
+                    $badStudentIds[] = $record['student_id'];
+                }
+            }
+
+            if ($badStudentIds) {
+                throw ValidationException::withMessages([
+                    'records' => 'Siswa dengan ID '.implode(', ', $badStudentIds).' tidak berada di kelas yang Anda ajar untuk mapel ini.',
+                ]);
+            }
         }
 
         // Ambil config penilaian aktif untuk validasi scale_max

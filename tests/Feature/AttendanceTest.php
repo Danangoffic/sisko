@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Attendance;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\Teacher;
 use App\Models\User;
 use App\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,6 +36,7 @@ class AttendanceTest extends TestCase
     public function test_guru_can_view_attendances(): void
     {
         $guru = User::factory()->guru()->create();
+        Teacher::factory()->create(['user_id' => $guru->id]);
 
         $response = $this->actingAs($guru)->get('/attendances');
 
