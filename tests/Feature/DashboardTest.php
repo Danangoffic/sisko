@@ -77,6 +77,24 @@ class DashboardTest extends TestCase
         );
     }
 
+    public function test_siswa_dashboard_fallback_includes_full_stats_shape_when_student_is_missing(): void
+    {
+        $siswaUser = User::factory()->create(['role' => Role::Siswa]);
+
+        $response = $this->actingAs($siswaUser)->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('dashboard')
+            ->has('stats')
+            ->where('stats.tagihan_pending', 0)
+            ->where('stats.tagihan_overdue', 0)
+            ->where('stats.rata_rata_nilai', null)
+            ->where('stats.ranking', null)
+            ->where('stats.kelas', null)
+        );
+    }
+
     public function test_dashboard_includes_announcements(): void
     {
         $admin = User::factory()->admin()->create();

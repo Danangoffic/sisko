@@ -98,7 +98,13 @@ class DashboardController extends Controller
         $student = $user->student;
 
         if (! $student) {
-            return ['tagihan_pending' => 0, 'rata_rata_nilai' => null];
+            return [
+                'tagihan_pending' => 0,
+                'tagihan_overdue' => 0,
+                'rata_rata_nilai' => null,
+                'ranking' => null,
+                'kelas' => null,
+            ];
         }
 
         $latestReportCard = ReportCard::where('student_id', $student->id)

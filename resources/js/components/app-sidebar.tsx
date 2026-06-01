@@ -81,17 +81,26 @@ function buildNavGroups(role: string): NavGroup[] {
         ],
     });
 
+    const academicItems = [
+        { title: 'Kelas', href: SchoolClassController.index().url, icon: School },
+        { title: 'Absensi', href: AttendanceController.index().url, icon: ClipboardList },
+        { title: 'Penilaian', href: GradeController.index().url, icon: GraduationCap },
+        { title: 'Rapor', href: ReportCardController.index().url, icon: ScrollText },
+    ];
+
+    if (role === 'admin') {
+        academicItems.splice(1, 0, {
+            title: 'Jadwal',
+            href: ScheduleController.index().url,
+            icon: CalendarDays,
+        });
+    }
+
     // Admin & Guru
     if (role === 'admin' || role === 'guru') {
         groups.push({
             label: 'Akademik',
-            items: [
-                { title: 'Kelas', href: SchoolClassController.index().url, icon: School },
-                { title: 'Jadwal', href: ScheduleController.index().url, icon: CalendarDays },
-                { title: 'Absensi', href: AttendanceController.index().url, icon: ClipboardList },
-                { title: 'Penilaian', href: GradeController.index().url, icon: GraduationCap },
-                { title: 'Rapor', href: ReportCardController.index().url, icon: ScrollText },
-            ],
+            items: academicItems,
         });
     }
 

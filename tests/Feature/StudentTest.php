@@ -6,8 +6,10 @@ use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
 use App\Role;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class StudentTest extends TestCase
@@ -84,6 +86,35 @@ class StudentTest extends TestCase
             ->assertRedirect();
 
         $this->assertDatabaseHas('students', ['id' => $student->id, 'name' => 'Nama Baru']);
+    }
+
+    public function test_admin_can_add_email_to_existing_student_without_user_and_send_reset_link(): void
+    {
+        Notification::fake();
+
+        $student = Student::factory()->create([
+            'school_class_id' => $this->class->id,
+            'user_id' => null,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put("/students/{$student->id}", [
+                'school_class_id' => $this->class->id,
+                'nisn' => $student->nisn,
+                'name' => $student->name,
+                'gender' => $student->gender,
+                'email' => 'siswa-baru@sisko.test',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'siswa-baru@sisko.test',
+            'role' => Role::Siswa->value,
+        ]);
+
+        $user = User::where('email', 'siswa-baru@sisko.test')->firstOrFail();
+
+        Notification::assertSentTo($user, ResetPassword::class);
     }
 
     public function test_admin_can_delete_student_without_user(): void

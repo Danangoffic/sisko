@@ -158,7 +158,7 @@ class GradeTest extends TestCase
         $this->assertDatabaseHas('grades', ['id' => $grade->id, 'score' => 9]);
     }
 
-    public function test_update_auto_converts_letter_grade_from_grade_config(): void
+    public function test_update_overwrites_stale_letter_grade_from_grade_config(): void
     {
         $academicYear = AcademicYear::factory()->create();
         $semester = Semester::factory()->create(['academic_year_id' => $academicYear->id]);
@@ -166,9 +166,9 @@ class GradeTest extends TestCase
 
         $grade = Grade::factory()->create(['semester_id' => $semester->id, 'score' => 70, 'letter_grade' => 'B']);
 
-        // Update score 90 tanpa letter_grade → harus auto-konversi ke A
+        // Letter lama ikut terkirim dari form edit, tetapi score berubah ke 90 → harus tetap jadi A
         $this->actingAs($this->admin)
-            ->put("/grades/{$grade->id}", ['score' => 90, 'letter_grade' => '', 'description' => ''])
+            ->put("/grades/{$grade->id}", ['score' => 90, 'letter_grade' => 'B', 'description' => ''])
             ->assertRedirect();
 
         $this->assertDatabaseHas('grades', ['id' => $grade->id, 'score' => 90, 'letter_grade' => 'A']);

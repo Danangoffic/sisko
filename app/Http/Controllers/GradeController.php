@@ -97,12 +97,7 @@ class GradeController extends Controller
         DB::transaction(function () use ($validated, $gradeConfig): void {
             foreach ($validated['records'] as $record) {
                 $score = isset($record['score']) && $record['score'] !== '' ? (float) $record['score'] : null;
-
-                // Auto-konversi ke huruf jika ada GradeConfig
-                $letterGrade = $record['letter_grade'] ?? null;
-                if ($score !== null && $gradeConfig && empty($letterGrade)) {
-                    $letterGrade = $gradeConfig->letterFor($score);
-                }
+                $letterGrade = $this->resolveLetterGrade($score, $record['letter_grade'] ?? null, $gradeConfig);
 
                 Grade::updateOrCreate(
                     [
@@ -149,10 +144,11 @@ class GradeController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
-        // Auto-konversi ke huruf jika ada GradeConfig dan letter_grade tidak diisi
-        if (isset($validated['score']) && $validated['score'] !== null && $gradeConfig && empty($validated['letter_grade'])) {
-            $validated['letter_grade'] = $gradeConfig->letterFor((float) $validated['score']);
-        }
+        $validated['letter_grade'] = $this->resolveLetterGrade(
+            isset($validated['score']) && $validated['score'] !== null ? (float) $validated['score'] : null,
+            $validated['letter_grade'] ?? null,
+            $gradeConfig
+        );
 
         $grade->update($validated);
 
@@ -171,5 +167,14 @@ class GradeController extends Controller
         $grade->delete();
 
         return back()->with('success', 'Nilai berhasil dihapus.');
+    }
+
+    private function resolveLetterGrade(?float $score, ?string $letterGrade, ?GradeConfig $gradeConfig): ?string
+    {
+        if ($score !== null && $gradeConfig) {
+            return $gradeConfig->letterFor($score);
+        }
+
+        return $letterGrade;
     }
 }
