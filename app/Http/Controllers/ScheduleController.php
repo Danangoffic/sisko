@@ -10,6 +10,7 @@ use App\Models\Teacher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -97,7 +98,9 @@ class ScheduleController extends Controller
         }
 
         if ($query->exists()) {
-            abort(422, 'Jadwal bentrok dengan jadwal yang sudah ada.');
+            throw ValidationException::withMessages([
+                'start_time' => 'Jadwal bentrok dengan jadwal yang sudah ada (kelas atau guru yang sama di waktu yang sama).',
+            ]);
         }
     }
 }

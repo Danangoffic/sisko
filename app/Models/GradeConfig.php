@@ -21,4 +21,30 @@ class GradeConfig extends Model
     {
         return $this->belongsTo(AcademicYear::class);
     }
+
+    /**
+     * Konversi nilai angka ke huruf berdasarkan skala scale_max.
+     * Menggunakan pembagian 5 band: A/B/C/D/E.
+     */
+    public function letterFor(float $score): string
+    {
+        $max = (float) $this->scale_max ?: 100;
+        $pct = ($score / $max) * 100;
+
+        return match (true) {
+            $pct >= 85 => 'A',
+            $pct >= 70 => 'B',
+            $pct >= 55 => 'C',
+            $pct >= 40 => 'D',
+            default => 'E',
+        };
+    }
+
+    /**
+     * Apakah nilai ini lulus berdasarkan passing_grade?
+     */
+    public function isPassing(float $score): bool
+    {
+        return $score >= (float) $this->passing_grade;
+    }
 }

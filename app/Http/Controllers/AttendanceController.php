@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,10 +17,17 @@ class AttendanceController extends Controller
 {
     public function index(Request $request): Response
     {
+        $user = $request->user();
+        $teacher = $user->isGuru() ? $user->teacher : null;
+
         $classes = SchoolClass::orderBy('name')->get(['id', 'name']);
 
-        $query = Attendance::with(['student', 'schoolClass'])
-            ->latest('date');
+        $query = Attendance::with(['student', 'schoolClass'])->latest('date');
+
+        // Guru hanya melihat absensi yang dia catat
+        if ($teacher) {
+            $query->where('recorded_by', $user->id);
+        }
 
         if ($request->filled('school_class_id')) {
             $query->where('school_class_id', $request->input('school_class_id'));
@@ -48,6 +56,9 @@ class AttendanceController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $user = $request->user();
+        $teacher = $user->isGuru() ? $user->teacher : null;
+
         $validated = $request->validate([
             'school_class_id' => ['required', 'exists:school_classes,id'],
             'date' => ['required', 'date'],
@@ -57,6 +68,19 @@ class AttendanceController extends Controller
             'records.*.status' => ['required', Rule::in(['hadir', 'izin', 'sakit', 'alpha'])],
             'records.*.note' => ['nullable', 'string'],
         ]);
+
+        // Guru hanya boleh absen kelas yang ada di jadwalnya
+        if ($teacher) {
+            $hasSchedule = $teacher->schedules()
+                ->where('school_class_id', $validated['school_class_id'])
+                ->exists();
+
+            if (! $hasSchedule) {
+                throw ValidationException::withMessages([
+                    'school_class_id' => 'Anda tidak memiliki jadwal mengajar di kelas ini.',
+                ]);
+            }
+        }
 
         DB::transaction(function () use ($validated, $request): void {
             foreach ($validated['records'] as $record) {
@@ -95,6 +119,13 @@ class AttendanceController extends Controller
 
     public function destroy(Attendance $attendance): RedirectResponse
     {
+        $user = request()->user();
+
+        // Guru hanya boleh hapus absensi yang dia catat
+        if ($user->isGuru() && $attendance->recorded_by !== $user->id) {
+            abort(403);
+        }
+
         $attendance->delete();
 
         return back()->with('success', 'Data absensi berhasil dihapus.');

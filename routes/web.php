@@ -6,10 +6,13 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\BookLoanController;
 use App\Http\Controllers\ClassPromotionController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GradeConfigController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\PaymentTypeController;
+use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\ReportCardController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SchoolClassController;
@@ -21,13 +24,22 @@ use Illuminate\Support\Facades\Route;
 Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
 
     Route::get('/kelas', [SchoolClassController::class, 'index'])->name('class.index');
     Route::post('/kelas', [SchoolClassController::class, 'store'])->name('class.store');
     Route::delete('/kelas/{school_class}', [SchoolClassController::class, 'destroy'])->name('class.destroy');
+
+    // Portal Siswa
+    Route::middleware('role:siswa')->prefix('portal')->name('portal.')->group(function () {
+        Route::get('schedule', [PortalController::class, 'schedule'])->name('schedule');
+        Route::get('attendances', [PortalController::class, 'attendances'])->name('attendances');
+        Route::get('grades', [PortalController::class, 'grades'])->name('grades');
+        Route::get('report-cards', [PortalController::class, 'reportCards'])->name('report-cards');
+        Route::get('invoices', [PortalController::class, 'invoices'])->name('invoices');
+    });
 
     Route::middleware('role:admin')->group(function () {
         Route::inertia('/users', 'users/index')->name('users.index');
@@ -58,6 +70,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('book-loans', [BookLoanController::class, 'store'])->name('book-loans.store');
         Route::post('book-loans/{book_loan}/return', [BookLoanController::class, 'returnBook'])->name('book-loans.return');
         Route::delete('book-loans/{book_loan}', [BookLoanController::class, 'destroy'])->name('book-loans.destroy');
+        Route::resource('grade-configs', GradeConfigController::class)->except(['create', 'edit', 'show']);
     });
 
     Route::middleware('role:admin,guru')->group(function () {
@@ -70,6 +83,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('grades/{grade}', [GradeController::class, 'destroy'])->name('grades.destroy');
         Route::get('report-cards', [ReportCardController::class, 'index'])->name('report-cards.index');
         Route::post('report-cards/generate', [ReportCardController::class, 'generate'])->name('report-cards.generate');
+        Route::get('report-cards/{report_card}/download', [ReportCardController::class, 'download'])->name('report-cards.download');
         Route::put('report-cards/{report_card}', [ReportCardController::class, 'update'])->name('report-cards.update');
         Route::delete('report-cards/{report_card}', [ReportCardController::class, 'destroy'])->name('report-cards.destroy');
     });

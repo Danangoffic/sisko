@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -52,11 +53,15 @@ class StudentController extends Controller
                 $user = User::create([
                     'name' => $validated['name'],
                     'email' => $validated['email'],
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make(Str::password(12)),
                     'role' => Role::Siswa,
                     'email_verified_at' => now(),
                 ]);
                 $userId = $user->id;
+
+                // Kirim link set-password ke email siswa
+                $broker = app('auth.password.broker');
+                $broker->sendResetLink(['email' => $user->email]);
             }
 
             Student::create([
@@ -101,7 +106,7 @@ class StudentController extends Controller
                 $user = User::create([
                     'name' => $validated['name'],
                     'email' => $validated['email'],
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make(Str::password(12)),
                     'role' => Role::Siswa,
                     'email_verified_at' => now(),
                 ]);

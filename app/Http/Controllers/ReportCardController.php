@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Grade;
 use App\Models\ReportCard;
 use App\Models\Semester;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -75,6 +77,35 @@ class ReportCardController extends Controller
         });
 
         return back()->with('success', 'Rapor berhasil di-generate untuk '.$studentIds->count().' siswa.');
+    }
+
+    /**
+     * Download rapor sebagai PDF.
+     */
+    public function download(ReportCard $reportCard): HttpResponse
+    {
+        $reportCard->load([
+            'student.schoolClass',
+            'semester.academicYear',
+        ]);
+
+        $grades = Grade::with('subject')
+            ->where('student_id', $reportCard->student_id)
+            ->where('semester_id', $reportCard->semester_id)
+            ->get();
+
+        $pdf = Pdf::loadView('pdf.report-card', [
+            'reportCard' => $reportCard,
+            'grades' => $grades,
+        ])->setPaper('a4', 'portrait');
+
+        $filename = 'rapor-'
+            .str_replace(' ', '-', strtolower($reportCard->student->name))
+            .'-'.$reportCard->semester->academicYear->name
+            .'-'.$reportCard->semester->name
+            .'.pdf';
+
+        return $pdf->download($filename);
     }
 
     public function update(Request $request, ReportCard $reportCard): RedirectResponse

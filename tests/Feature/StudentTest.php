@@ -7,6 +7,7 @@ use App\Models\Student;
 use App\Models\User;
 use App\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class StudentTest extends TestCase
@@ -62,6 +63,10 @@ class StudentTest extends TestCase
 
         $this->assertDatabaseHas('users', ['email' => 'siti@sisko.test', 'role' => Role::Siswa->value]);
         $this->assertDatabaseHas('students', ['nisn' => '1234567890']);
+
+        // Password tidak boleh literal 'password'
+        $user = User::where('email', 'siti@sisko.test')->first();
+        $this->assertFalse(Hash::check('password', $user->password));
     }
 
     public function test_admin_can_update_student(): void

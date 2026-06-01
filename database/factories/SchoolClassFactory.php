@@ -13,7 +13,7 @@ class SchoolClassFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->randomElement(['VII', 'VIII', 'IX']).' '.fake()->randomLetter(),
+            'name' => fake()->unique()->numerify('Kelas ##'),
             'homeroom_teacher' => fake()->name(),
         ];
     }
