@@ -1,5 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Download, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -117,6 +117,9 @@ export default function ReportCardsIndex({ reportCards, semesters }: Props) {
                                         <td className="flex gap-1 py-3">
                                             <Button variant="ghost" size="icon" onClick={() => startEdit(rc)}><Pencil className="h-4 w-4" /></Button>
                                             <Button variant="ghost" size="icon" onClick={() => handleDelete(rc.id)} disabled={deleteForm.processing}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                            <a href={ReportCardController.download(rc.id).url} target="_blank" rel="noopener noreferrer">
+                                                <Button variant="ghost" size="icon" type="button"><Download className="h-4 w-4" /></Button>
+                                            </a>
                                         </td>
                                     </tr>
                                 )

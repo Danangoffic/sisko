@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -49,14 +50,9 @@ class StudentController extends Controller
             $userId = null;
 
             if (! empty($validated['email'])) {
-                $user = User::create([
-                    'name' => $validated['name'],
-                    'email' => $validated['email'],
-                    'password' => Hash::make('password'),
-                    'role' => Role::Siswa,
-                    'email_verified_at' => now(),
-                ]);
+                $user = $this->createStudentUser($validated['name'], $validated['email']);
                 $userId = $user->id;
+                $this->sendPasswordResetLink($user->email);
             }
 
             Student::create([
@@ -98,14 +94,9 @@ class StudentController extends Controller
                     'email' => $validated['email'] ?? $student->user->email,
                 ]);
             } elseif (! empty($validated['email'])) {
-                $user = User::create([
-                    'name' => $validated['name'],
-                    'email' => $validated['email'],
-                    'password' => Hash::make('password'),
-                    'role' => Role::Siswa,
-                    'email_verified_at' => now(),
-                ]);
+                $user = $this->createStudentUser($validated['name'], $validated['email']);
                 $student->user_id = $user->id;
+                $this->sendPasswordResetLink($user->email);
             }
 
             $student->update([
@@ -122,6 +113,24 @@ class StudentController extends Controller
         });
 
         return back()->with('success', 'Data siswa berhasil diperbarui.');
+    }
+
+    private function createStudentUser(string $name, string $email): User
+    {
+        return User::create([
+            'name' => $name,
+            'email' => $email,
+            'password' => Hash::make(Str::password(12)),
+            'role' => Role::Siswa,
+            'email_verified_at' => now(),
+        ]);
+    }
+
+    private function sendPasswordResetLink(string $email): void
+    {
+        app('auth.password.broker')->sendResetLink([
+            'email' => $email,
+        ]);
     }
 
     public function destroy(Student $student): RedirectResponse

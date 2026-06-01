@@ -63,14 +63,17 @@ class ScheduleTest extends TestCase
         // Same class, same day, overlapping time
         Schedule::factory()->create($this->base);
 
-        $this->actingAs($this->admin)
+        $response = $this->actingAs($this->admin)
             ->post('/schedules', array_merge($this->base, [
                 'subject_id' => Subject::factory()->create()->id,
                 'teacher_id' => Teacher::factory()->create()->id,
                 'start_time' => '08:00',
                 'end_time' => '09:30',
-            ]))
-            ->assertStatus(422);
+            ]));
+
+        // ValidationException dari Inertia dikembalikan sebagai redirect dengan session errors
+        $response->assertRedirect();
+        $response->assertSessionHasErrors(['start_time']);
     }
 
     public function test_teacher_conflict_is_rejected(): void
@@ -78,14 +81,16 @@ class ScheduleTest extends TestCase
         // Same teacher, same day, overlapping time
         Schedule::factory()->create($this->base);
 
-        $this->actingAs($this->admin)
+        $response = $this->actingAs($this->admin)
             ->post('/schedules', array_merge($this->base, [
                 'school_class_id' => SchoolClass::factory()->create()->id,
                 'subject_id' => Subject::factory()->create()->id,
                 'start_time' => '07:30',
                 'end_time' => '09:00',
-            ]))
-            ->assertStatus(422);
+            ]));
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors(['start_time']);
     }
 
     public function test_non_overlapping_schedule_is_allowed(): void
