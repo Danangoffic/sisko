@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Grade;
+use App\Models\Semester;
 use App\Models\Student;
 use App\Models\Subject;
-use App\Models\Semester;
 use App\Models\Teacher;
 use Illuminate\Database\Seeder;
 
@@ -20,6 +20,7 @@ class GradeSeeder extends Seeder
 
         if (! $student || ! $subject || ! $semester || ! $teacher) {
             $this->command?->info('Skipping GradeSeeder: ensure students, subjects, semesters and teachers exist');
+
             return;
         }
 
@@ -45,19 +46,5 @@ class GradeSeeder extends Seeder
                 ]
             );
         }
-    }
-}
-<?php
-
-namespace Database\Seeders;
-
-use App\Models\Grade;
-use Illuminate\Database\Seeder;
-
-class GradeSeeder extends Seeder
-{
-    public function run(): void
-    {
-        Grade::factory()->count(50)->create();
     }
 }
